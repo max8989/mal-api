@@ -1,27 +1,39 @@
 const malScraper = require("mal-scraper");
 
 module.exports = async function (context, req) {
-  const searchInput = req.body && req.body.search;
+  const search = req.body && req.body.search;
+  const endpoint = req.params.endpoint;
 
-  if (!searchInput) {
-    context.res = {
-      status: 400,
-      body: "Please provide a 'search' term in the request body.",
-    };
-    return;
-  }
-
-  const handleSearch = async () => {
-    try {
-      return await malScraper.search.search("anime", {
-        term: searchInput,
-      });
+  let responseMessage;
+  try {
+    switch (endpoint) {
+      case "anime":
+        responseMessage = await malScraper.search.search("anime", {
+          term: search,
+        });
+        break;
+      case "manga":
+        responseMessage = await malScraper.search.search("manga", {
+          term: search,
+        });
+        break;
+      case "watchlist":
+        responseMessage = await malScraper.getWatchListFromUser(search);
+        break;
+      case "helpers":
+        responseMessage = malScraper.search.helpers;
+        break;
+      default:
+        responseMessage = "Invalid endpoint";
+        break;
+      }
     } catch (error) {
-      return error;
+      context.res = {
+        status: 500,
+        body: `Error: ${error}`,
+      };
+    return;
     }
-  };
-
-  const responseMessage = await handleSearch(searchInput);
 
   context.res = {
     body: responseMessage,
